@@ -190,16 +190,5 @@ Use the following command for logistic regression. It will have L1 regularizatio
        python -um mimic3models.multitask.main --network mimic3models/keras_models/multitask_lstm.py --dim 512 --timestep 1 --mode train --batch_size 16 --dropout 0.3 --ihm_C 0.2 --decomp_C 1.0 --los_C 1.5 --pheno_C 1.0 --output_dir mimic3models/multitask
        
 
-## General todos:
-
-- Improve comments and documentation
-- Add comments about channel-wise LSTMs and deep superivison
-- Add the best state files for each baseline
-- Add https://zenodo.org/ 
-- Release 1.0
-- Update citation section with Zenodo DOI
-- Add to MIMIC's derived data repo
-- Refactor, where appropriate, to make code more generally useful
-- Expand coverage of variable map and variable range files.
-- Decide whether we are missing any other high-priority data (CPT codes, inputs, etc.)
-
+## General notes:
+To specify which features to extract, look at `scripts/extract_episodes_from_subjects.py`. The MIMIC benchmark code looks in this `itemid_to_variable_map.csv`, and picks out items with the status column = "ready". I don't know what "ready" means... but let's assume they have picked out good features.
