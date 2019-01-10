@@ -37,6 +37,14 @@ class Reader(object):
             self._current_index = 0
         return self.read_example(to_read_index)
 
+    def _read_meta_data(self, meta_data_filename: str):
+        """
+        Read the meta data file (<ID>_episode<num>.csv)
+        """
+        with open(os.path.join(self._dataset_dir, meta_data_filename), "r") as lbfile:
+            lbfile.readline()
+            meta_vals = np.array(lbfile.readline().strip().split(','), dtype=float)
+        return meta_vals
 
 class DecompensationReader(Reader):
     def __init__(self, dataset_dir, listfile=None):
@@ -106,7 +114,7 @@ class InHospitalMortalityReader(Reader):
         """
         Reader.__init__(self, dataset_dir, listfile)
         self._data = [line.split(',') for line in self._data]
-        self._data = [(x, int(y)) for (x, y) in self._data]
+        self._data = [(x0, x1, int(y)) for (x0, x1, y) in self._data]
         self._period_length = period_length
 
     def _read_timeseries(self, ts_filename):
@@ -141,11 +149,14 @@ class InHospitalMortalityReader(Reader):
             raise ValueError("Index must be from 0 (inclusive) to number of lines (exclusive).")
 
         name = self._data[index][0]
+        meta_data_name = self._data[index][1]
         t = self._period_length
-        y = self._data[index][1]
+        y = self._data[index][2]
         (X, header) = self._read_timeseries(name)
+        meta_data = self._read_meta_data(meta_data_name)
 
         return {"X": X,
+                "meta": meta_data,
                 "t": t,
                 "y": y,
                 "header": header,

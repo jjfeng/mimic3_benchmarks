@@ -76,6 +76,8 @@ for subject_dir in os.listdir(args.subjects_root_path):
             sys.stdout.write(' (no data!)')
             sys.stdout.flush()
             continue
+        if episodic_data.ix[episodic_data.index==stay_id].shape[0] == 0:
+            continue
 
         episode = add_hours_elpased_to_events(episode, intime).set_index('HOURS').sort_index(axis=0)
         episodic_data.Weight.ix[stay_id] = get_first_valid_from_timeseries(episode, 'Weight')
