@@ -8,8 +8,15 @@ import numpy as np
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description="Create data for in-hospital mortality prediction task.")
-    parser.add_argument('root_path', type=str, help="Path to root folder containing train and test sets.")
-    parser.add_argument('output_path', type=str, help="Directory where the created data should be stored.")
+    parser.add_argument(
+            'root_path',
+            type=str,
+            help="Path to root folder containing train and test sets.")
+    parser.add_argument(
+            '--output-path',
+            type=str,
+            default="../../data/mimic/in-hospital-mortality/",
+            help="Directory where the created data should be stored.")
     parser.add_argument(
             '--seed',
             type=int,
@@ -19,12 +26,12 @@ def parse_args(args):
             '--train-csv',
             type=str,
             default="../../data/mimic/train_ids.csv",
-            help="csv file with train ids")
+            help="csv file with input train ids")
     parser.add_argument(
             '--test-csv',
             type=str,
             default="../../data/mimic/test_ids.csv",
-            help="csv file with test ids")
+            help="csv file with input test ids")
     args, _ = parser.parse_known_args()
     assert args.output_path != args.root_path
     args.patient_id_csvs = {
