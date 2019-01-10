@@ -151,10 +151,10 @@ class InHospitalMortalityReader(Reader):
         patient = self._data[index][0]
         name = self._data[index][1]
         meta_data_name = self._data[index][2]
+        meta_data = self._read_meta_data(meta_data_name)
         t = self._data[index][3]
         y = self._data[index][4]
         (X, header) = self._read_timeseries(name)
-        meta_data = self._read_meta_data(meta_data_name)
 
         return {"patient": patient,
                 "X": X,
@@ -218,13 +218,15 @@ class LengthOfStayReader(Reader):
 
         patient = self._data[index][0]
         name = self._data[index][1]
-        meta = self._data[index][2]
+        meta_data_name = self._data[index][2]
+        meta_data = self._read_meta_data(meta_data_name)
         t = self._data[index][3]
         y = self._data[index][4]
         (X, header) = self._read_timeseries(name, t)
 
         return {"patient": patient,
                 "X": X,
+                "meta": meta_data,
                 "t": t,
                 "y": y,
                 "header": header,
