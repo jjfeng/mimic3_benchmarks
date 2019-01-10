@@ -1,29 +1,62 @@
-from __future__ import absolute_import
-from __future__ import print_function
-
+import sys
 import os
 import argparse
 import numpy as np
 import pandas as pd
-import random
-random.seed(49297)
 
+def parse_args(args):
+    parser = argparse.ArgumentParser(description="Create data for length of stay prediction task.")
+    parser.add_argument(
+            'root_path',
+            type=str,
+            help="Path to root folder containing train and test sets.")
+    parser.add_argument(
+            '--output-path',
+            type=str,
+            default="../../data/mimic/length-of-stay/",
+            help="Directory where the created data should be stored.")
+    parser.add_argument(
+            '--seed',
+            type=int,
+            default=100,
+            help="random seed")
+    parser.add_argument(
+            '--train-csv',
+            type=str,
+            default="../../data/mimic/train_ids.csv",
+            help="csv file with input train ids")
+    parser.add_argument(
+            '--test-csv',
+            type=str,
+            default="../../data/mimic/test_ids.csv",
+            help="csv file with input test ids")
+    args, _ = parser.parse_known_args()
+    assert args.output_path != args.root_path
+    args.patient_id_csvs = {
+            "train": args.train_csv,
+            "test": args.test_csv}
+    return args
 
 def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0, eps=1e-6):
+    patient_id_csv = args.patient_id_csvs[partition]
+    patients = np.array(np.genfromtxt(patient_id_csv, delimiter=","), dtype=int)
+    print(partition, "patient ids", patients)
+
     output_dir = os.path.join(args.output_path, partition)
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     list_file_data = []
-    patients = list(filter(str.isdigit, os.listdir(os.path.join(args.root_path, partition))))
     for (patient_index, patient) in enumerate(patients):
-        patient_folder = os.path.join(args.root_path, partition, patient)
+        patient = str(patient)
+        patient_folder = os.path.join(args.root_path, patient)
         patient_ts_files = list(filter(lambda x: x.find("timeseries") != -1, os.listdir(patient_folder)))
 
         for ts_filename in patient_ts_files:
             with open(os.path.join(patient_folder, ts_filename)) as tsfile:
                 lb_filename = ts_filename.replace("_timeseries", "")
                 label_df = pd.read_csv(os.path.join(patient_folder, lb_filename))
+                first_row_label = label_df.iloc[0]
 
                 # empty label file
                 if label_df.shape[0] == 0:
@@ -74,28 +107,22 @@ def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0, eps
             print("processed {} / {} patients".format(patient_index + 1, len(patients)), end='\r')
 
     print(len(list_file_data))
-    if partition == "train":
-        random.shuffle(list_file_data)
-    if partition == "test":
-        list_file_data = sorted(list_file_data)
 
     with open(os.path.join(output_dir, "listfile.csv"), "w") as listfile:
         listfile.write('patient,stay,meta,period_length,y_true\n')
         for list_file_data_row in list_file_data:
-            listfile.write('%d,%s,%s,%.6f,%.6f\n' % list_file_data_row)
+            listfile.write('%s,%s,%s,%.6f,%.6f\n' % list_file_data_row)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Create data for length of stay prediction task.")
-    parser.add_argument('root_path', type=str, help="Path to root folder containing train and test sets.")
-    parser.add_argument('output_path', type=str, help="Directory where the created data should be stored.")
-    args, _ = parser.parse_known_args()
+def main(args=sys.argv[1:]):
+    args = parse_args(args)
+    np.random.seed(args.seed)
 
     if not os.path.exists(args.output_path):
         os.makedirs(args.output_path)
 
-    process_partition(args, "test")
     process_partition(args, "train")
+    process_partition(args, "test")
 
 
 if __name__ == '__main__':
