@@ -14,7 +14,7 @@ def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0, eps
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    xty_triples = []
+    list_file_data = []
     patients = list(filter(str.isdigit, os.listdir(os.path.join(args.root_path, partition))))
     for (patient_index, patient) in enumerate(patients):
         patient_folder = os.path.join(args.root_path, partition, patient)
@@ -62,23 +62,27 @@ def process_partition(args, partition, sample_rate=1.0, shortest_length=4.0, eps
                     outfile.write(header)
                     for line in ts_lines:
                         outfile.write(line)
+                output_lb_filename = patient + "_" + lb_filename
+                with open(os.path.join(output_dir, output_lb_filename), "w") as outfile:
+                    outfile.write("Age,Gender,Ethnicity\n")
+                    outfile.write("%f,%d,%d" % (first_row_label["Age"], first_row_label["Gender"], first_row_label["Ethnicity"]))
 
                 for t in sample_times:
-                    xty_triples.append((output_ts_filename, t, los - t))
+                    list_file_data.append((patient, output_ts_filename, output_lb_filename, t, los - t))
 
         if (patient_index + 1) % 100 == 0:
             print("processed {} / {} patients".format(patient_index + 1, len(patients)), end='\r')
 
-    print(len(xty_triples))
+    print(len(list_file_data))
     if partition == "train":
-        random.shuffle(xty_triples)
+        random.shuffle(list_file_data)
     if partition == "test":
-        xty_triples = sorted(xty_triples)
+        list_file_data = sorted(list_file_data)
 
     with open(os.path.join(output_dir, "listfile.csv"), "w") as listfile:
-        listfile.write('stay,period_length,y_true\n')
-        for (x, t, y) in xty_triples:
-            listfile.write('{},{:.6f},{:.6f}\n'.format(x, t, y))
+        listfile.write('patient,stay,meta,period_length,y_true\n')
+        for list_file_data_row in list_file_data:
+            listfile.write('%d,%s,%s,%.6f,%.6f\n' % list_file_data_row)
 
 
 def main():

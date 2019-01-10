@@ -60,7 +60,7 @@ def process_partition(args, partition, eps=1e-6, n_hours=48):
                     outfile.write("Age,Gender,Ethnicity\n")
                     outfile.write("%f,%d,%d" % (first_row_label["Age"], first_row_label["Gender"], first_row_label["Ethnicity"]))
 
-                list_file_data.append((output_ts_filename, output_lb_filename, mortality))
+                list_file_data.append((patient, output_ts_filename, output_lb_filename, n_hours, mortality))
 
         if (patient_index + 1) % 100 == 0:
             print("processed {} / {} patients".format(patient_index + 1, len(patients)), end='\r')
@@ -72,9 +72,9 @@ def process_partition(args, partition, eps=1e-6, n_hours=48):
         list_file_data = sorted(list_file_data)
 
     with open(os.path.join(output_dir, "listfile.csv"), "w") as listfile:
-        listfile.write('stay,y_true\n')
+        listfile.write('patient,stay,meta,period_length,y_true\n')
         for list_file_entry in list_file_data:
-            listfile.write('%s,%s,%d\n' % list_file_entry)
+            listfile.write('%d,%s,%s,%d,%d\n' % list_file_entry)
 
 
 def main():

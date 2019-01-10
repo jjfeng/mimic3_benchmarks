@@ -14,6 +14,8 @@ functions_map = {
 
 periods_map = {
     "all": (0, 0, 1, 0),
+    "first1day": (0, 0, 0, 24),
+    "first2days": (0, 0, 0, 2 * 24),
     "first4days": (0, 0, 0, 4 * 24),
     "first8days": (0, 0, 0, 8 * 24),
     "last12hours": (1, -12, 1, 0),

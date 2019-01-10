@@ -32,6 +32,8 @@ def main():
     for (index, subject) in enumerate(subjects):
         if index % 100 == 0:
             print("processed {} / {} {}\r".format(index+1, len(subjects), ' '*10))
+        if not os.path.exists(os.path.join(args.subjects_root_path, subject, 'events.csv')):
+            continue
 
         stays_df = pd.read_csv(os.path.join(args.subjects_root_path, subject, 'stays.csv'), index_col=False,
                                dtype={'HADM_ID': str, "ICUSTAY_ID": str})

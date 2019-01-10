@@ -104,18 +104,16 @@ class DecompensationReader(Reader):
 
 
 class InHospitalMortalityReader(Reader):
-    def __init__(self, dataset_dir, listfile=None, period_length=48.0):
+    def __init__(self, dataset_dir, listfile=None):
         """ Reader for in-hospital moratality prediction task.
 
         :param dataset_dir:   Directory where timeseries files are stored.
         :param listfile:      Path to a listfile. If this parameter is left `None` then
                               `dataset_dir/listfile.csv` will be used.
-        :param period_length: Length of the period (in hours) from which the prediction is done.
         """
         Reader.__init__(self, dataset_dir, listfile)
         self._data = [line.split(',') for line in self._data]
-        self._data = [(x0, x1, int(y)) for (x0, x1, y) in self._data]
-        self._period_length = period_length
+        self._data = [(int(patient_id), x0, x1, int(t), int(y)) for (patient_id, x0, x1, t, y) in self._data]
 
     def _read_timeseries(self, ts_filename):
         ret = []
@@ -132,6 +130,8 @@ class InHospitalMortalityReader(Reader):
 
         :param index: Index of the line of the listfile to read (counting starts from 0).
         :return: Dictionary with the following keys:
+            patient : int
+                Patient's ID
             X : np.array
                 2D array containing all events. Each row corresponds to a moment.
                 First column is the time and other columns correspond to different
@@ -148,14 +148,16 @@ class InHospitalMortalityReader(Reader):
         if index < 0 or index >= len(self._data):
             raise ValueError("Index must be from 0 (inclusive) to number of lines (exclusive).")
 
-        name = self._data[index][0]
-        meta_data_name = self._data[index][1]
-        t = self._period_length
-        y = self._data[index][2]
+        patient = self._data[index][0]
+        name = self._data[index][1]
+        meta_data_name = self._data[index][2]
+        t = self._data[index][3]
+        y = self._data[index][4]
         (X, header) = self._read_timeseries(name)
         meta_data = self._read_meta_data(meta_data_name)
 
-        return {"X": X,
+        return {"patient": patient,
+                "X": X,
                 "meta": meta_data,
                 "t": t,
                 "y": y,
@@ -164,16 +166,19 @@ class InHospitalMortalityReader(Reader):
 
 
 class LengthOfStayReader(Reader):
-    def __init__(self, dataset_dir, listfile=None):
+    def __init__(self, dataset_dir, listfile=None, fixed_time=None):
         """ Reader for length of stay prediction task.
 
         :param dataset_dir: Directory where timeseries files are stored.
         :param listfile:    Path to a listfile. If this parameter is left `None` then
                             `dataset_dir/listfile.csv` will be used.
+        :param first_time: If a number, then we only read the observed time points with t close to fixed_time
         """
         Reader.__init__(self, dataset_dir, listfile)
         self._data = [line.split(',') for line in self._data]
-        self._data = [(x, float(t), float(y)) for (x, t, y) in self._data]
+        self._data = [(int(patient_id), x0, x1, float(t), float(y)) for (patient_id, x0, x1, t, y) in self._data]
+        if fixed_time is not None:
+            self._data = [row for row in self._data if np.isclose(row[3], fixed_time)]
 
     def _read_timeseries(self, ts_filename, time_bound):
         ret = []
@@ -193,6 +198,8 @@ class LengthOfStayReader(Reader):
 
         :param index: Index of the line of the listfile to read (counting starts from 0).
         :return: Dictionary with the following keys:
+            patient: int
+                patient's ID
             X : np.array
                 2D array containing all events. Each row corresponds to a moment.
                 First column is the time and other columns correspond to different
@@ -209,12 +216,15 @@ class LengthOfStayReader(Reader):
         if index < 0 or index >= len(self._data):
             raise ValueError("Index must be from 0 (inclusive) to number of lines (exclusive).")
 
-        name = self._data[index][0]
-        t = self._data[index][1]
-        y = self._data[index][2]
+        patient = self._data[index][0]
+        name = self._data[index][1]
+        meta = self._data[index][2]
+        t = self._data[index][3]
+        y = self._data[index][4]
         (X, header) = self._read_timeseries(name, t)
 
-        return {"X": X,
+        return {"patient": patient,
+                "X": X,
                 "t": t,
                 "y": y,
                 "header": header,
